@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>tlk-save — video indirici</title>
+    <meta name="description" content="YouTube, TikTok, Instagram, X ve 1800'den fazla siteden video ve ses indir. Reklam yok, kayıt yok, takip yok." />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="tlk-save — video indirici" />
+    <meta property="og:description" content="Linki yapıştır, indir. YouTube, TikTok, Instagram, X ve 1800+ site. Reklamsız." />
+    <meta property="og:url" content="https://talkdedsec.github.io/tlk-save/" />
+    <meta property="og:image" content="https://talkdedsec.github.io/tlk-save/social.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script>
+      // Apply the saved theme before the first paint, so a light-mode visitor
+      // never sees a dark flash and the other way round.
+      try {
+        var t = localStorage.getItem("tlk-save:theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        var l = localStorage.getItem("tlk-save:locale");
+        if (l === "en" || l === "tr") document.documentElement.lang = l;
+        else if (!/^tr\b/i.test(navigator.language || "")) document.documentElement.lang = "en";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>tlk-save needs JavaScript. / tlk-save JavaScript gerektirir.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
