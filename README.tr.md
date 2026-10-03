@@ -14,6 +14,7 @@ YouTube, TikTok, Instagram, X ve 1800'den fazla siteden video ve ses indir. Link
 
 - **Gerçek en yüksek kalite**: Sitede varsa 4K, 60 fps ve HDR. Her oynatıcıda açılan MP4 olarak birleştirilir.
 - **MP3 / M4A**: Kapak görseli, başlık ve sanatçı bilgisi dosyanın içine gömülü gelir.
+- **Klip, altyazı, kapak**: Videonun sadece bir bölümünü, altyazısını SRT olarak ya da kapak görselini tam çözünürlükte indirebilirsin.
 - **Her yerden**: Telefonda doğrudan Paylaş menüsünden (sayfayı ana ekrana ekle), bilgisayarda tek tıklık yer imi butonuyla.
 - **Gizli**: Dosyalar hazır olduktan 30 dakika sonra sunucudan silinir. Ne indirdiğin kaydedilmez. Son indirilenler listesi sadece senin tarayıcında durur.
 - Türkçe ve İngilizce, açık ve koyu tema, her ekran boyutunda çalışır.

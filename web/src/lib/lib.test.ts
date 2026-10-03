@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatBytes, formatDuration, qualityLabel } from "./format";
+import { formatBytes, formatDuration, parseTime, qualityLabel } from "./format";
 import { MESSAGES, errorKey, translate } from "./i18n";
 import { detectPlatform, extractUrl, looksLikeUrl } from "./platforms";
 
@@ -20,7 +20,7 @@ describe("i18n", () => {
     const codes = [
       "invalid_url", "unsupported", "playlist", "live", "private", "age_restricted", "login_required",
       "geo_blocked", "too_long", "too_large", "upstream_limited", "bot_check", "unavailable",
-      "rate_limited", "busy", "timeout", "engine_missing", "not_found", "invalid_option", "cancelled",
+      "rate_limited", "busy", "timeout", "engine_missing", "not_found", "invalid_option", "invalid_section", "cancelled",
       "failed", "network", "no_server",
     ];
     for (const code of codes) expect(errorKey(code)).toBe(`error.${code}`);
@@ -72,5 +72,21 @@ describe("format", () => {
     expect(qualityLabel(2160)).toBe("4K");
     expect(qualityLabel(1080)).toBe("1080p");
     expect(qualityLabel(undefined)).toBe("Best");
+  });
+});
+
+describe("parseTime", () => {
+  it("reads the ways people type times", () => {
+    expect(parseTime("90")).toBe(90);
+    expect(parseTime("1:30")).toBe(90);
+    expect(parseTime(" 1:02:05 ")).toBe(3725);
+    expect(parseTime("0:07.5")).toBe(7.5);
+    expect(parseTime("0:07,5")).toBe(7.5);
+  });
+
+  it("rejects everything else", () => {
+    for (const bad of ["", "abc", "1:75", "1:2:3:4", "-5", "1.5:30", "1::30"]) {
+      expect(parseTime(bad), bad).toBeNull();
+    }
   });
 });

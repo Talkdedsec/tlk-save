@@ -21,6 +21,7 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     config::Config,
     error::ApiError,
+    formats::Section,
     ytdlp::{Engine, Event},
 };
 
@@ -67,6 +68,8 @@ pub struct JobView {
 
 pub struct Job {
     pub client: String,
+    /// Link, choice and section: two jobs with the same key make the same file.
+    key: String,
     pub dir: PathBuf,
     pub cancel: CancellationToken,
     pub view: watch::Sender<JobView>,
@@ -120,12 +123,23 @@ impl Manager {
             .count()
     }
 
+    /// Start a download, or hand back the job already making (or holding) the
+    /// same file. A reused finished file gets a fresh lifetime.
     pub fn create(
         self: &Arc<Self>,
         url: String,
         choice: String,
+        section: Option<Section>,
         client: &str,
     ) -> Result<JobView, ApiError> {
+        let key = format!(
+            "{url}
+{choice}
+{section:?}"
+        );
+        if let Some(view) = self.reuse(&key) {
+            return Ok(view);
+        }
         let id: String = rand::rng()
             .sample_iter(&Alphanumeric)
             .take(16)
@@ -144,6 +158,7 @@ impl Manager {
         };
         let job = Arc::new(Job {
             client: client.to_owned(),
+            key,
             dir: self.cfg.jobs_dir().join(&id),
             cancel: CancellationToken::new(),
             view: watch::Sender::new(view.clone()),
@@ -164,11 +179,28 @@ impl Manager {
         }
 
         let manager = Arc::clone(self);
-        tokio::spawn(async move { manager.run(job, url, choice).await });
+        tokio::spawn(async move { manager.run(job, url, choice, section).await });
         Ok(view)
     }
 
-    async fn run(&self, job: Arc<Job>, url: String, choice: String) {
+    fn reuse(&self, key: &str) -> Option<JobView> {
+        let jobs = self.jobs.lock().expect("jobs lock");
+        let job = jobs.values().find(|j| {
+            j.key == key
+                && match j.view.borrow().state {
+                    State::Ready => j.file().is_some_and(|f| f.is_file()),
+                    state => state.is_active(),
+                }
+        })?;
+        if job.view.borrow().state == State::Ready {
+            *job.finished.lock().expect("job finished lock") = Some(Instant::now());
+            let expires = unix_now() + self.cfg.file_ttl;
+            job.view.send_modify(|v| v.expires = Some(expires));
+        }
+        Some(job.snapshot())
+    }
+
+    async fn run(&self, job: Arc<Job>, url: String, choice: String, section: Option<Section>) {
         let permit = tokio::select! {
             permit = self.slots.clone().acquire_owned() => permit.expect("semaphore is never closed"),
             () = job.cancel.cancelled() => return self.finish(&job, Err(ApiError::new("cancelled", StatusCode::CONFLICT))).await,
@@ -178,24 +210,31 @@ impl Manager {
         let view = job.view.clone();
         let result = self
             .engine
-            .download(&url, &choice, &job.dir, &job.cancel, move |event| {
-                view.send_modify(|v| match event {
-                    Event::Progress {
-                        fraction,
-                        speed,
-                        eta,
-                    } => {
-                        v.progress = v.progress.max(fraction);
-                        v.speed = speed;
-                        v.eta = eta;
-                    }
-                    Event::Processing => {
-                        v.state = State::Processing;
-                        v.speed = None;
-                        v.eta = None;
-                    }
-                });
-            })
+            .download(
+                &url,
+                &choice,
+                section,
+                &job.dir,
+                &job.cancel,
+                move |event| {
+                    view.send_modify(|v| match event {
+                        Event::Progress {
+                            fraction,
+                            speed,
+                            eta,
+                        } => {
+                            v.progress = v.progress.max(fraction);
+                            v.speed = speed;
+                            v.eta = eta;
+                        }
+                        Event::Processing => {
+                            v.state = State::Processing;
+                            v.speed = None;
+                            v.eta = None;
+                        }
+                    });
+                },
+            )
             .await;
         drop(permit);
         self.finish(&job, result).await;
@@ -203,11 +242,7 @@ impl Manager {
 
     async fn finish(&self, job: &Job, result: Result<PathBuf, ApiError>) {
         *job.finished.lock().expect("job finished lock") = Some(Instant::now());
-        let expires = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs()
-            + self.cfg.file_ttl;
+        let expires = unix_now() + self.cfg.file_ttl;
 
         match result {
             Ok(path) => {
@@ -315,4 +350,11 @@ async fn remove_dir(path: &Path) {
             Err(_) => tokio::time::sleep(Duration::from_millis(300)).await,
         }
     }
+}
+
+fn unix_now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
 }

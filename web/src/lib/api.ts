@@ -6,13 +6,22 @@ import { load, save } from "./storage";
 
 export interface Choice {
   id: string;
-  kind: "video" | "audio";
+  kind: "video" | "audio" | "subtitle" | "image";
   ext: string;
   height?: number;
   fps?: number;
   hdr?: boolean;
   size: number | null;
   too_large?: boolean;
+  // Subtitles: language code, the site's name for it, and whether it is machine-made.
+  lang?: string;
+  name?: string;
+  auto?: boolean;
+}
+
+export interface Section {
+  start: number;
+  end: number;
 }
 
 export interface Info {
@@ -123,8 +132,8 @@ export function getInfo(url: string, signal?: AbortSignal): Promise<Info> {
   return request<Info>("/api/info", { method: "POST", body: JSON.stringify({ url }), signal });
 }
 
-export function createJob(url: string, option: string): Promise<JobView> {
-  return request<JobView>("/api/jobs", { method: "POST", body: JSON.stringify({ url, option }) });
+export function createJob(url: string, option: string, section?: Section): Promise<JobView> {
+  return request<JobView>("/api/jobs", { method: "POST", body: JSON.stringify({ url, option, ...section }) });
 }
 
 export function cancelJob(id: string): Promise<JobView> {
