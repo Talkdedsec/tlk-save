@@ -29,7 +29,7 @@ use tower_http::{
 use crate::{
     config::Config,
     error::ApiError,
-    formats::{self, Choice},
+    formats::{self, Choice, Section},
     jobs::{JobView, Manager},
     limit::{Cache, RateLimiter},
     urls,
@@ -68,6 +68,9 @@ struct LinkBody {
 struct JobBody {
     url: String,
     option: String,
+    /// Optional section, seconds from the start. Both or neither.
+    start: Option<f64>,
+    end: Option<f64>,
 }
 
 pub fn router(state: Arc<AppState>) -> Router {
@@ -233,10 +236,21 @@ async fn create_job(
     Json(body): Json<JobBody>,
 ) -> Result<(StatusCode, Json<JobView>), ApiError> {
     let url = urls::validate(&body.url)?;
-    if formats::args(&body.option).is_none() {
+    if formats::args(&body.option, None).is_none() {
         return Err(ApiError::bad("invalid_option"));
     }
     let known = state.cache.get(&url);
+    let section = match (body.start, body.end) {
+        (None, None) => None,
+        (Some(start), Some(end)) => {
+            let duration = known.as_ref().and_then(|i| i.duration);
+            Some(
+                Section::new(start, end, duration)
+                    .ok_or_else(|| ApiError::bad("invalid_section"))?,
+            )
+        }
+        _ => return Err(ApiError::bad("invalid_section")),
+    };
     if let Some(info) = &known {
         match info.options.iter().find(|o| o.id == body.option) {
             None => return Err(ApiError::bad("invalid_option")),
@@ -252,7 +266,7 @@ async fn create_job(
         .check(&who, "jobs", state.cfg.jobs_per_minute)?;
 
     let target = known.map_or(url, |info| info.url.clone());
-    let view = state.jobs.create(target, body.option, &who)?;
+    let view = state.jobs.create(target, body.option, section, &who)?;
     Ok((StatusCode::ACCEPTED, Json(view)))
 }
 
@@ -263,12 +277,18 @@ async fn job_status(
     Ok(Json(state.jobs.get(&id)?.snapshot()))
 }
 
+/// Only the visitor who started a job can stop it; a shared job keeps
+/// running for anyone else waiting on the same file.
 async fn cancel_job(
     State(state): Shared,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<JobView>, ApiError> {
     let job = state.jobs.get(&id)?;
-    job.cancel.cancel();
+    if job.client == client(&state, &headers, addr) {
+        job.cancel.cancel();
+    }
     Ok(Json(job.snapshot()))
 }
 

@@ -14,6 +14,7 @@ Download videos and audio from YouTube, TikTok, Instagram, X and more than 1800 
 
 - **Real best quality**: 4K, 60 fps and HDR when the site has them, joined into an MP4 that plays everywhere.
 - **MP3 / M4A** with cover art, title and artist embedded.
+- **Clips, subtitles, covers**: download just a part of a video, its subtitles as SRT, or its cover image in full resolution.
 - **From anywhere**: share straight from a phone (install the page to the home screen), or use the one-click bookmark on a computer.
 - **Private**: files are deleted from the server 30 minutes after they are ready; nothing about what you download is logged. Recent downloads are kept in your browser only.
 - Turkish and English, light and dark theme, works on any screen size.
@@ -71,7 +72,7 @@ Every flag also works as an environment variable (`tlk-save --help` lists them a
 |---|---|
 | `GET /api/health` | Status, versions, limits |
 | `POST /api/info` `{url}` | Title, thumbnail and the quality menu |
-| `POST /api/jobs` `{url, option}` | Start a download |
+| `POST /api/jobs` `{url, option, start?, end?}` | Start a download, optionally only a part. The same request again reuses the file |
 | `GET /api/jobs/{id}` | Job state |
 | `GET /api/jobs/{id}/events` | The same, as server-sent events |
 | `GET /api/jobs/{id}/file` | The finished file (supports ranges) |

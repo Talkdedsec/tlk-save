@@ -162,11 +162,13 @@ impl Engine {
         &self,
         url: &str,
         choice: &str,
+        section: Option<formats::Section>,
         dir: &Path,
         cancel: &CancellationToken,
         mut on_event: impl FnMut(Event),
     ) -> Result<PathBuf, ApiError> {
-        let choice_args = formats::args(choice).ok_or_else(|| ApiError::bad("invalid_option"))?;
+        let choice_args =
+            formats::args(choice, section).ok_or_else(|| ApiError::bad("invalid_option"))?;
         tokio::fs::create_dir_all(dir).await.map_err(|err| {
             ApiError::new("failed", StatusCode::INTERNAL_SERVER_ERROR).with_detail(err.to_string())
         })?;
@@ -179,9 +181,9 @@ impl Engine {
             .arg(format!("home:{}", dir.display()))
             .arg("--paths")
             .arg(format!("temp:{}", dir.join(".part").display()))
+            .arg("--output")
+            .arg(output_template(section))
             .args([
-                "--output",
-                "%(title).120B [%(id)s].%(ext)s",
                 "--newline",
                 "--progress",
                 "--progress-template",
@@ -243,12 +245,59 @@ impl Engine {
         if !status.success() {
             return Err(ApiError::from_ytdlp(&stderr_tail.join("\n")));
         }
-        // --max-filesize makes yt-dlp skip the file and exit cleanly.
-        match file {
-            Some(path) if path.is_file() => Ok(path),
-            _ => Err(ApiError::new("too_large", StatusCode::UNPROCESSABLE_ENTITY)),
+        if let Some(path) = file.filter(|p| p.is_file()) {
+            return Ok(path);
+        }
+        // Subtitles and thumbnails skip the download, so yt-dlp has no final
+        // file to print; whatever it wrote is the result.
+        if let Some(path) = largest_file(dir).await {
+            return Ok(path);
+        }
+        // --max-filesize makes yt-dlp skip the file and exit cleanly. A
+        // subtitle request for a language the video lacks also ends here.
+        Err(if choice.starts_with('s') {
+            ApiError::new("unavailable", StatusCode::UNPROCESSABLE_ENTITY)
+        } else {
+            ApiError::new("too_large", StatusCode::UNPROCESSABLE_ENTITY)
+        })
+    }
+}
+
+/// `Title [id].mp4`, or `Title [id] 1.05-1.30.mp4` for a clip, so a clip never
+/// looks like the whole video once it is in the downloads folder.
+fn output_template(section: Option<formats::Section>) -> String {
+    let stamp = |t: f64| {
+        let t = t.round() as u64;
+        if t >= 3600 {
+            format!("{}.{:02}.{:02}", t / 3600, t / 60 % 60, t % 60)
+        } else {
+            format!("{}.{:02}", t / 60, t % 60)
+        }
+    };
+    match section {
+        Some(s) => format!(
+            "%(title).110B [%(id)s] {}-{}.%(ext)s",
+            stamp(s.start),
+            stamp(s.end)
+        ),
+        None => "%(title).120B [%(id)s].%(ext)s".to_owned(),
+    }
+}
+
+async fn largest_file(dir: &Path) -> Option<PathBuf> {
+    let mut entries = tokio::fs::read_dir(dir).await.ok()?;
+    let mut best: Option<(u64, PathBuf)> = None;
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let Ok(meta) = entry.metadata().await else {
+            continue;
+        };
+        let path = entry.path();
+        let partial = path.extension().is_some_and(|e| e == "part" || e == "ytdl");
+        if meta.is_file() && !partial && best.as_ref().is_none_or(|(size, _)| meta.len() > *size) {
+            best = Some((meta.len(), path));
         }
     }
+    best.map(|(_, path)| path)
 }
 
 fn spawn_error(err: &std::io::Error) -> ApiError {
@@ -414,6 +463,21 @@ mod tests {
         let mut t = Tracker::default();
         t.feed(r#"TLKFMT [{"format_id":"a","filesize":null},{"format_id":"b"}]"#);
         assert!((fraction(t.feed("TLKP 25|NA|50|NA|NA|b")) - 0.75).abs() < 1e-9);
+    }
+
+    #[test]
+    fn clips_are_named_by_their_section() {
+        assert_eq!(output_template(None), "%(title).120B [%(id)s].%(ext)s");
+        let s = formats::Section::new(65.0, 90.4, None);
+        assert_eq!(
+            output_template(s),
+            "%(title).110B [%(id)s] 1.05-1.30.%(ext)s"
+        );
+        let s = formats::Section::new(3600.0, 3725.0, None);
+        assert_eq!(
+            output_template(s),
+            "%(title).110B [%(id)s] 1.00.00-1.02.05.%(ext)s"
+        );
     }
 
     #[test]

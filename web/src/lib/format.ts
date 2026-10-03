@@ -50,3 +50,17 @@ export function qualityLabel(height: number | undefined): string {
   if (height >= 2160) return "4K";
   return `${height}p`;
 }
+
+/**
+ * Reads a time the way people type it: "90", "1:30", "1:02:05", "1:30.5".
+ * Returns seconds, or null for anything else.
+ */
+export function parseTime(text: string): number | null {
+  const parts = text.trim().replace(",", ".").split(":");
+  if (parts.length > 3 || parts.some((p) => !/^\d+(\.\d+)?$/.test(p))) return null;
+  const numbers = parts.map(Number);
+  // Only the last part may carry a fraction, and minutes/seconds stay under 60.
+  if (numbers.slice(0, -1).some((n) => !Number.isInteger(n))) return null;
+  if (numbers.length > 1 && numbers.slice(1).some((n) => n >= 60)) return null;
+  return numbers.reduce((total, n) => total * 60 + n, 0);
+}

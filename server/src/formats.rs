@@ -42,11 +42,13 @@ pub fn platform_of(extractor_key: &str) -> &'static str {
         .map_or("other", |(platform, _)| platform)
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Video,
     Audio,
+    Subtitle,
+    Image,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -65,6 +67,32 @@ pub struct Choice {
     /// Bigger than this server accepts; shown, but cannot be chosen.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub too_large: bool,
+    /// Subtitles: the language code and the name the site gives it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lang: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Subtitles made by speech recognition rather than by a person.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub auto: bool,
+}
+
+impl Choice {
+    fn new(id: impl Into<String>, kind: Kind, ext: &'static str) -> Self {
+        Self {
+            id: id.into(),
+            kind,
+            ext,
+            height: None,
+            fps: None,
+            hdr: false,
+            size: None,
+            too_large: false,
+            lang: None,
+            name: None,
+            auto: false,
+        }
+    }
 }
 
 struct Format<'a>(&'a Value);
@@ -176,57 +204,116 @@ pub fn build(info: &Value) -> Vec<Choice> {
                 })
             });
             Choice {
-                id: format!("v{height}"),
-                kind: Kind::Video,
-                ext: "mp4",
                 height: Some(height),
                 fps: chosen.and_then(|f| f.num("fps")).map(|n| n.round() as u32),
                 hdr: chosen
                     .and_then(|f| f.str("dynamic_range"))
                     .is_some_and(|r| r != "SDR"),
                 size,
-                too_large: false,
+                ..Choice::new(format!("v{height}"), Kind::Video, "mp4")
             }
         })
         .collect();
 
     // Some embeds carry no dimensions at all; they still get a plain entry.
     if choices.is_empty() && formats.iter().any(Format::has_video) {
-        choices.push(Choice {
-            id: "vbest".into(),
-            kind: Kind::Video,
-            ext: "mp4",
-            height: None,
-            fps: None,
-            hdr: false,
-            size: None,
-            too_large: false,
-        });
+        choices.push(Choice::new("vbest", Kind::Video, "mp4"));
     }
 
     if formats.iter().any(Format::has_audio) {
         choices.push(Choice {
-            id: "a-mp3".into(),
-            kind: Kind::Audio,
-            ext: "mp3",
-            height: None,
-            fps: None,
-            hdr: false,
             size: duration.map(|d| (MP3_KBPS * 1000.0 / 8.0 * d) as u64),
-            too_large: false,
+            ..Choice::new("a-mp3", Kind::Audio, "mp3")
         });
         choices.push(Choice {
-            id: "a-m4a".into(),
-            kind: Kind::Audio,
-            ext: "m4a",
-            height: None,
-            fps: None,
-            hdr: false,
             size: audio_size,
-            too_large: false,
+            ..Choice::new("a-m4a", Kind::Audio, "m4a")
         });
     }
+
+    choices.extend(subtitles(info));
+
+    let has_thumbnail = info.get("thumbnail").is_some_and(Value::is_string)
+        || info
+            .get("thumbnails")
+            .and_then(Value::as_array)
+            .is_some_and(|t| !t.is_empty());
+    if has_thumbnail {
+        choices.push(Choice::new("i-jpg", Kind::Image, "jpg"));
+    }
     choices
+}
+
+/// Most subtitles a menu lists; a video can carry a hundred machine translations.
+const MAX_SUBTITLES: usize = 40;
+
+/// Language codes go into yt-dlp's `--sub-langs`, which is a regex, so only
+/// plain letters, digits, `-` and `_` are allowed through.
+pub fn valid_lang(lang: &str) -> bool {
+    !lang.is_empty()
+        && lang.len() <= 32
+        && lang
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
+/// Subtitles written by people first, then the site's own speech recognition
+/// in the video's language. Machine translations of those are left out.
+fn subtitles(info: &Value) -> Vec<Choice> {
+    let entries = |key: &str| -> Vec<(String, Option<String>)> {
+        let Some(map) = info.get(key).and_then(Value::as_object) else {
+            return Vec::new();
+        };
+        let mut list: Vec<(String, Option<String>)> = map
+            .iter()
+            .filter(|(lang, tracks)| {
+                *lang != "live_chat"
+                    && valid_lang(lang)
+                    && tracks.as_array().is_some_and(|t| !t.is_empty())
+            })
+            .map(|(lang, tracks)| {
+                let name = tracks
+                    .as_array()
+                    .and_then(|t| t.iter().find_map(|x| x.get("name")?.as_str()))
+                    .map(str::to_owned);
+                (lang.clone(), name)
+            })
+            .collect();
+        list.sort_by(|a, b| a.0.cmp(&b.0));
+        list
+    };
+
+    let mut out: Vec<Choice> = entries("subtitles")
+        .into_iter()
+        .map(|(lang, name)| Choice {
+            lang: Some(lang.clone()),
+            name,
+            ..Choice::new(format!("s-{lang}"), Kind::Subtitle, "srt")
+        })
+        .collect();
+
+    let spoken = info.get("language").and_then(Value::as_str);
+    let auto = entries("automatic_captions");
+    let originals: Vec<(String, Option<String>)> = auto
+        .iter()
+        .filter(|(lang, _)| lang.ends_with("-orig"))
+        .cloned()
+        .collect();
+    let picked = if originals.is_empty() {
+        auto.into_iter()
+            .filter(|(lang, _)| Some(lang.as_str()) == spoken)
+            .collect()
+    } else {
+        originals
+    };
+    out.extend(picked.into_iter().map(|(lang, name)| Choice {
+        lang: Some(lang.trim_end_matches("-orig").to_owned()),
+        name,
+        auto: true,
+        ..Choice::new(format!("sa-{lang}"), Kind::Subtitle, "srt")
+    }));
+    out.truncate(MAX_SUBTITLES);
+    out
 }
 
 fn rate(f: &Format) -> f64 {
@@ -254,8 +341,78 @@ fn pick_video<'a>(videos: &[&'a Format<'a>], height: u32) -> Option<&'a Format<'
     })
 }
 
-/// yt-dlp arguments for one menu entry. `None` for anything not on the menu.
-pub fn args(choice_id: &str) -> Option<Vec<String>> {
+/// A part of the video, in seconds from the start.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Section {
+    pub start: f64,
+    pub end: f64,
+}
+
+impl Section {
+    /// Checks a requested range. `duration` is the video's length, when known.
+    pub fn new(start: f64, end: f64, duration: Option<f64>) -> Option<Self> {
+        let sane = start.is_finite() && end.is_finite() && start >= 0.0 && end - start >= 1.0;
+        let fits = duration.is_none_or(|d| end <= d + 1.0);
+        (sane && fits).then_some(Self { start, end })
+    }
+}
+
+/// yt-dlp arguments for one menu entry, optionally cut to a section.
+/// `None` for anything not on the menu.
+pub fn args(choice_id: &str, section: Option<Section>) -> Option<Vec<String>> {
+    let mut args = base_args(choice_id)?;
+    if let Some(Section { start, end }) = section
+        && (choice_id.starts_with('v') || choice_id.starts_with("a-"))
+    {
+        // Cutting at exact times re-encodes around the cut points; without it
+        // a clip starts at the nearest keyframe, seconds away from the request.
+        args.extend([
+            "--download-sections".into(),
+            format!("*{start:.3}-{end:.3}"),
+            "--force-keyframes-at-cuts".into(),
+        ]);
+    }
+    Some(args)
+}
+
+fn base_args(choice_id: &str) -> Option<Vec<String>> {
+    if let Some(lang) = choice_id
+        .strip_prefix("sa-")
+        .or_else(|| choice_id.strip_prefix("s-"))
+    {
+        if !valid_lang(lang) {
+            return None;
+        }
+        let which = if choice_id.starts_with("sa-") {
+            "--write-auto-subs"
+        } else {
+            "--write-subs"
+        };
+        return Some(
+            [
+                "--skip-download",
+                which,
+                "--sub-langs",
+                lang,
+                "--convert-subs",
+                "srt",
+            ]
+            .map(String::from)
+            .to_vec(),
+        );
+    }
+    if choice_id == "i-jpg" {
+        return Some(
+            [
+                "--skip-download",
+                "--write-thumbnail",
+                "--convert-thumbnails",
+                "jpg",
+            ]
+            .map(String::from)
+            .to_vec(),
+        );
+    }
     let video = |sort: String| {
         vec![
             "-f".into(),
@@ -361,10 +518,66 @@ mod tests {
 
     #[test]
     fn only_menu_ids_become_arguments() {
-        assert!(args("v1080").is_some());
-        assert!(args("a-mp3").is_some());
-        assert!(args("v1081").is_none());
-        assert!(args("bestvideo").is_none());
-        assert!(args("v1080 --exec rm").is_none());
+        assert!(args("v1080", None).is_some());
+        assert!(args("a-mp3", None).is_some());
+        assert!(args("s-en", None).is_some());
+        assert!(args("sa-en-orig", None).is_some());
+        assert!(args("i-jpg", None).is_some());
+        assert!(args("v1081", None).is_none());
+        assert!(args("bestvideo", None).is_none());
+        assert!(args("v1080 --exec rm", None).is_none());
+        assert!(args("s-en.*", None).is_none());
+        assert!(args("s-", None).is_none());
+        assert!(args("s-en --exec x", None).is_none());
+    }
+
+    #[test]
+    fn sections_are_checked_and_only_cut_media() {
+        assert!(Section::new(10.0, 20.0, Some(60.0)).is_some());
+        assert!(Section::new(20.0, 10.0, Some(60.0)).is_none());
+        assert!(Section::new(10.0, 10.5, None).is_none());
+        assert!(Section::new(-1.0, 10.0, None).is_none());
+        assert!(Section::new(10.0, 90.0, Some(60.0)).is_none());
+        assert!(Section::new(f64::NAN, 10.0, None).is_none());
+
+        let cut = Section::new(5.0, 12.5, None);
+        let video = args("v720", cut).unwrap();
+        assert!(
+            video
+                .windows(2)
+                .any(|w| w == ["--download-sections", "*5.000-12.500"])
+        );
+        let subs = args("s-en", cut).unwrap();
+        assert!(!subs.iter().any(|a| a == "--download-sections"));
+    }
+
+    #[test]
+    fn lists_real_subtitles_and_only_original_captions() {
+        let info = json!({
+            "language": "en",
+            "thumbnail": "https://i.ytimg.com/x.jpg",
+            "formats": [{"vcodec": "h264", "acodec": "aac", "width": 1280, "height": 720}],
+            "subtitles": {
+                "tr": [{"ext": "vtt", "name": "Turkish"}],
+                "live_chat": [{"ext": "json"}],
+                "bad lang": [{"ext": "vtt"}]
+            },
+            "automatic_captions": {
+                "en-orig": [{"ext": "vtt", "name": "English (Original)"}],
+                "de": [{"ext": "vtt", "name": "German"}],
+                "fr": [{"ext": "vtt", "name": "French"}]
+            }
+        });
+        let menu = build(&info);
+        let subs: Vec<&str> = menu
+            .iter()
+            .filter(|c| c.kind == Kind::Subtitle)
+            .map(|c| c.id.as_str())
+            .collect();
+        assert_eq!(subs, ["s-tr", "sa-en-orig"]);
+        let auto = menu.iter().find(|c| c.id == "sa-en-orig").unwrap();
+        assert_eq!(auto.lang.as_deref(), Some("en"));
+        assert!(auto.auto);
+        assert!(menu.iter().any(|c| c.id == "i-jpg"));
     }
 }
