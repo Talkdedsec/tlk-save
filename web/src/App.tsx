@@ -23,8 +23,14 @@ type Lookup =
 
 type Status = "checking" | "online" | "offline";
 
-/** A link handed over by the bookmarklet (?url=) or a phone's Share menu (?text=). */
+/**
+ * A link handed over in the address: `#url=` from the bookmarklet (the part
+ * after # never reaches any server), or `?text=` / `?url=` from a phone's
+ * Share menu, which can only use a query.
+ */
 function linkFromAddress(): string {
+  const fromHash = new URLSearchParams(location.hash.slice(1)).get("url");
+  if (fromHash && looksLikeUrl(fromHash)) return extractUrl(fromHash);
   const params = new URLSearchParams(location.search);
   for (const key of ["url", "text", "title"]) {
     const value = params.get(key);
@@ -33,11 +39,14 @@ function linkFromAddress(): string {
   return "";
 }
 
-/** Keep the address bar in step, so the page can be refreshed or shared as is. */
+/**
+ * Keep the address bar in step, so the page can be refreshed or shared as is.
+ * The link lives after #, and any query from the Share menu is dropped.
+ */
 function reflectInAddress(url: string) {
   const next = new URL(location.href);
-  for (const key of ["url", "text", "title"]) next.searchParams.delete(key);
-  if (url) next.searchParams.set("url", url);
+  next.search = "";
+  next.hash = url ? new URLSearchParams({ url }).toString() : "";
   history.replaceState(null, "", next);
 }
 

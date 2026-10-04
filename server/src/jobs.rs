@@ -166,6 +166,13 @@ impl Manager {
             finished: Mutex::new(None),
         });
 
+        if dir_size(&self.cfg.jobs_dir()) >= self.cfg.max_total() {
+            return Err(ApiError::new(
+                "server_full",
+                StatusCode::SERVICE_UNAVAILABLE,
+            ));
+        }
+
         {
             let mut jobs = self.jobs.lock().expect("jobs lock");
             let running = jobs
@@ -266,7 +273,8 @@ impl Manager {
                     State::Error
                 };
                 if state == State::Error {
-                    tracing::info!(code = err.code, detail = %err.detail, "download failed");
+                    // Only the kind of failure: no link, title or visitor in the log.
+                    tracing::info!(code = err.code, "download failed");
                 }
                 job.view.send_modify(|v| {
                     v.state = state;
@@ -357,4 +365,38 @@ fn unix_now() -> u64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs()
+}
+
+/// Bytes under a folder, counted without following links.
+fn dir_size(path: &Path) -> u64 {
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return 0;
+    };
+    entries
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let meta = entry.metadata().ok()?;
+            Some(if meta.is_dir() {
+                dir_size(&entry.path())
+            } else {
+                meta.len()
+            })
+        })
+        .sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn counts_nested_files() {
+        let root = std::env::temp_dir().join(format!("tlk-save-size-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("a/b")).unwrap();
+        std::fs::write(root.join("x"), [0u8; 10]).unwrap();
+        std::fs::write(root.join("a/b/y"), [0u8; 32]).unwrap();
+        assert_eq!(dir_size(&root), 42);
+        std::fs::remove_dir_all(&root).unwrap();
+        assert_eq!(dir_size(&root), 0);
+    }
 }

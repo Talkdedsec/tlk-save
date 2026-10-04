@@ -30,12 +30,26 @@ browser ──▶ talkdedsec.github.io/tlk-save   (static site, this repo's web/
 
 Browsers are not allowed to pull videos from these sites directly, so a small server does the work. It is a single Rust program that drives the standalone [yt-dlp](https://github.com/yt-dlp/yt-dlp) executable, streams progress to the page and hands back the finished file. The generic extractor is switched off, so the server only ever opens sites yt-dlp knows; it cannot be pointed at private addresses.
 
+## Privacy and security
+
+- The page loads nothing from third parties: no analytics, cookies, fonts or images from other sites. Thumbnails come through the server, so YouTube, TikTok and others never see a visitor.
+- A link handed to the page sits after `#` in the address, which browsers never send to any server.
+- The server keeps no record of who downloaded what; logs hold only error kinds. Files are deleted 30 minutes after they are ready.
+- yt-dlp runs with its generic extractor off, so the server only opens sites it knows and cannot be pointed at private addresses. Only menu choices reach yt-dlp's arguments.
+- On Windows the server, yt-dlp and ffmpeg run as the limited LOCAL SERVICE account. `harden.ps1` turns Windows Firewall on, keeps Remote Desktop reachable and closes file sharing and RPC to the internet.
+
 ## Run your own server
 
 **Windows Server** (automatic HTTPS through Caddy, starts with Windows, restarts after a crash). In PowerShell opened as administrator:
 
 ```powershell
 irm https://raw.githubusercontent.com/Talkdedsec/tlk-save/main/server/deploy/windows/install.ps1 | iex
+```
+
+To also lock the server down (recommended):
+
+```powershell
+irm https://raw.githubusercontent.com/Talkdedsec/tlk-save/main/server/deploy/windows/harden.ps1 | iex
 ```
 
 **Linux / Docker**:
@@ -63,6 +77,7 @@ Every flag also works as an environment variable (`tlk-save --help` lists them a
 | `TLK_SAVE_MAX_DURATION` | `14400` | Longest video, seconds |
 | `TLK_SAVE_MAX_FILESIZE_MB` | `2048` | Largest file |
 | `TLK_SAVE_FILE_TTL` | `1800` | Seconds a finished file is kept |
+| `TLK_SAVE_MAX_TOTAL_GB` | `20` | Disk all downloads together may use |
 | `TLK_SAVE_WORKERS` | `3` | Downloads at the same time |
 | `TLK_SAVE_JOBS_PER_CLIENT` | `2` | Unfinished downloads per visitor |
 
@@ -76,6 +91,7 @@ Every flag also works as an environment variable (`tlk-save --help` lists them a
 | `GET /api/jobs/{id}` | Job state |
 | `GET /api/jobs/{id}/events` | The same, as server-sent events |
 | `GET /api/jobs/{id}/file` | The finished file (supports ranges) |
+| `GET /api/thumb/{token}` | A thumbnail, fetched by the server so the video site never sees the visitor |
 | `DELETE /api/jobs/{id}` | Cancel |
 
 ## Development
