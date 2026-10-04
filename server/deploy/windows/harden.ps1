@@ -40,8 +40,15 @@ Set-Rule "tlk-save block: SMB/RPC TCP" TCP @(135, 139, 445) Block
 Set-Rule "tlk-save block: NetBIOS UDP" UDP @(137, 138) Block
 
 Step "Turning Windows Firewall on"
-Set-Service MpsSvc -StartupType Automatic
-Start-Service MpsSvc
+# Windows protects the firewall service's settings even from administrators,
+# so it is only started if needed, never reconfigured.
+if ((Get-Service MpsSvc).Status -ne "Running") {
+    try {
+        Start-Service MpsSvc
+    } catch {
+        throw "The Windows Firewall service (MpsSvc) is stopped and could not be started: $_"
+    }
+}
 Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled True `
     -DefaultInboundAction Block -DefaultOutboundAction Allow
 
