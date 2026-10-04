@@ -76,9 +76,13 @@ Step "Caddy (HTTPS)"
 Fetch "https://caddyserver.com/api/download?os=windows&arch=amd64" "$Bin\caddy.exe"
 
 Step "Configuration for https://$Domain"
+$CaddyData = (Join-Path $Root "caddy").Replace('\', '/')
 @"
 {
 	admin off
+	storage file_system {
+		root $CaddyData
+	}
 }
 
 $Domain {
@@ -99,6 +103,13 @@ set PATH=%~dp0bin;%PATH%
 "%~dp0bin\caddy.exe" run --config "%~dp0Caddyfile" --adapter caddyfile >> "%~dp0logs\caddy.log" 2>&1
 "@ | Set-Content -Encoding ascii (Join-Path $Root "run-caddy.cmd")
 
+Step "Running as the limited LOCAL SERVICE account"
+# ffmpeg and yt-dlp handle files from the internet. Under LOCAL SERVICE a flaw
+# in either can reach this folder, not the rest of the machine. The SID is used
+# because the account name is translated on non-English Windows.
+$service = (New-Object Security.Principal.SecurityIdentifier "S-1-5-19").Translate([Security.Principal.NTAccount]).Value
+icacls $Root /grant "*S-1-5-19:(OI)(CI)M" /T /Q | Out-Null
+
 Step "Starting with Windows, restarting after a crash"
 function Register-Background($name, $script) {
     $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$script`"" -WorkingDirectory $Root
@@ -106,7 +117,7 @@ function Register-Background($name, $script) {
     $settings = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
         -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable -MultipleInstances IgnoreNew `
         -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+    $principal = New-ScheduledTaskPrincipal -UserId $service -LogonType ServiceAccount -RunLevel Limited
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
     Start-ScheduledTask -TaskName $name
 }

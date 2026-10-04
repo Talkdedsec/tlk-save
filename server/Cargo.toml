@@ -1,6 +1,6 @@
 [package]
 name = "tlk-save"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.88"
 description = "HTTP API behind tlk-save: looks links up and downloads them with yt-dlp."
@@ -24,6 +24,7 @@ url = "2"
 percent-encoding = "2"
 rand = "0.9"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 
 [dev-dependencies]
 http-body-util = "0.1"

@@ -20,7 +20,7 @@ describe("i18n", () => {
     const codes = [
       "invalid_url", "unsupported", "playlist", "live", "private", "age_restricted", "login_required",
       "geo_blocked", "too_long", "too_large", "upstream_limited", "bot_check", "unavailable",
-      "rate_limited", "busy", "timeout", "engine_missing", "not_found", "invalid_option", "invalid_section", "cancelled",
+      "rate_limited", "busy", "timeout", "engine_missing", "not_found", "invalid_option", "invalid_section", "server_full", "cancelled",
       "failed", "network", "no_server",
     ];
     for (const code of codes) expect(errorKey(code)).toBe(`error.${code}`);

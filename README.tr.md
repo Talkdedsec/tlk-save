@@ -30,12 +30,26 @@ tarayıcı ──▶ talkdedsec.github.io/tlk-save   (statik site, bu reponun we
 
 Tarayıcıların bu sitelerden doğrudan video çekmesine izin verilmiyor, bu yüzden işi küçük bir sunucu yapıyor. Sunucu, bağımsız [yt-dlp](https://github.com/yt-dlp/yt-dlp) programını çalıştıran tek bir Rust programı. İlerlemeyi canlı olarak sayfaya gönderir ve biten dosyayı teslim eder. Genel çıkarıcı kapalı olduğu için sunucu sadece yt-dlp'nin tanıdığı siteleri açar, iç ağdaki adreslere yönlendirilemez.
 
+## Gizlilik ve güvenlik
+
+- Sayfa başka hiçbir siteden bir şey yüklemez: analiz scripti, çerez, font ya da dışarıdan resim yok. Kapak resimleri sunucu üzerinden gelir, yani YouTube, TikTok ve diğerleri ziyaretçiyi hiç görmez.
+- Sayfaya verilen link adres çubuğunda `#` işaretinden sonra durur. Tarayıcılar bu kısmı hiçbir sunucuya göndermez.
+- Sunucu kimin ne indirdiğini kaydetmez. Loglarda sadece hata türü bulunur. Dosyalar hazır olduktan 30 dakika sonra silinir.
+- yt-dlp'nin genel çıkarıcısı kapalıdır. Sunucu sadece tanıdığı siteleri açar, iç ağdaki adreslere yönlendirilemez.
+- Windows'ta sunucu, yt-dlp ve ffmpeg kısıtlı LOCAL SERVICE hesabıyla çalışır. `harden.ps1` Windows Güvenlik Duvarı'nı açar, Uzak Masaüstü'nü erişilebilir tutar ve dosya paylaşımı ile RPC'yi internete kapatır.
+
 ## Kendi sunucunu çalıştır
 
 **Windows Server** (Caddy ile otomatik HTTPS, Windows ile birlikte başlar, çökerse yeniden açılır). Yönetici olarak açılmış PowerShell'de:
 
 ```powershell
 irm https://raw.githubusercontent.com/Talkdedsec/tlk-save/main/server/deploy/windows/install.ps1 | iex
+```
+
+Sunucuyu ayrıca korumaya almak için (önerilir):
+
+```powershell
+irm https://raw.githubusercontent.com/Talkdedsec/tlk-save/main/server/deploy/windows/harden.ps1 | iex
 ```
 
 **Linux / Docker**:

@@ -53,6 +53,10 @@ pub struct Config {
     #[arg(long, env = "TLK_SAVE_MAX_FILESIZE_MB", default_value_t = 2048)]
     pub max_filesize_mb: u64,
 
+    /// All downloads together may use at most this much disk, in gigabytes.
+    #[arg(long, env = "TLK_SAVE_MAX_TOTAL_GB", default_value_t = 20)]
+    pub max_total_gb: u64,
+
     /// How long a finished file stays available, in seconds.
     #[arg(long, env = "TLK_SAVE_FILE_TTL", default_value_t = 30 * 60)]
     pub file_ttl: u64,
@@ -77,6 +81,10 @@ pub struct Config {
 impl Config {
     pub fn max_filesize(&self) -> u64 {
         self.max_filesize_mb * 1024 * 1024
+    }
+
+    pub fn max_total(&self) -> u64 {
+        self.max_total_gb * 1024 * 1024 * 1024
     }
 
     pub fn file_ttl(&self) -> Duration {

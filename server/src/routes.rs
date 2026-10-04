@@ -32,6 +32,7 @@ use crate::{
     formats::{self, Choice, Section},
     jobs::{JobView, Manager},
     limit::{Cache, RateLimiter},
+    thumbs::Thumbs,
     urls,
     ytdlp::Engine,
 };
@@ -42,6 +43,7 @@ pub struct AppState {
     pub jobs: Arc<Manager>,
     pub limiter: RateLimiter,
     pub cache: Cache<Arc<Info>>,
+    pub thumbs: Thumbs,
 }
 
 type Shared = State<Arc<AppState>>;
@@ -99,6 +101,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/api/jobs/{id}", get(job_status).delete(cancel_job))
         .route("/api/jobs/{id}/events", get(job_events))
         .route("/api/jobs/{id}/file", get(job_file))
+        .route("/api/thumb/{token}", get(thumb))
         .fallback(|| async { ApiError::new("not_found", StatusCode::NOT_FOUND) })
         .layer(DefaultBodyLimit::max(16 * 1024))
         .layer(cors)
@@ -115,6 +118,12 @@ async fn private_network_access(request: Request, next: Next) -> Response {
         .get("access-control-request-private-network")
         .is_some_and(|v| v == "true");
     let mut response = next.run(request).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    headers.insert("referrer-policy", HeaderValue::from_static("no-referrer"));
     if asks {
         response.headers_mut().insert(
             HeaderName::from_static("access-control-allow-private-network"),
@@ -175,7 +184,10 @@ async fn info(
     )?;
 
     let raw = state.engine.describe(&url).await?;
-    let info = Arc::new(to_info(&raw, &url, &state.cfg)?);
+    let mut info = to_info(&raw, &url, &state.cfg)?;
+    // The site loads the picture from here, never from the video site.
+    info.thumbnail = info.thumbnail.and_then(|t| state.thumbs.register(&t));
+    let info = Arc::new(info);
     state.cache.put(url, info.clone());
     state.cache.put(info.url.clone(), info.clone());
     Ok(Json(info))
@@ -268,6 +280,10 @@ async fn create_job(
     let target = known.map_or(url, |info| info.url.clone());
     let view = state.jobs.create(target, body.option, section, &who)?;
     Ok((StatusCode::ACCEPTED, Json(view)))
+}
+
+async fn thumb(State(state): Shared, Path(token): Path<String>) -> Result<Response, ApiError> {
+    state.thumbs.fetch(&token).await
 }
 
 async fn job_status(

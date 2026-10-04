@@ -35,7 +35,7 @@ export function Features() {
 /** Opens this site with the current page's link, from any tab. */
 function bookmarkletCode(): string {
   const site = new URL(".", location.href).href;
-  return `javascript:(()=>{location.href=${JSON.stringify(site)}+'?url='+encodeURIComponent(location.href)})()`;
+  return `javascript:(()=>{location.href=${JSON.stringify(site)}+'#url='+encodeURIComponent(location.href)})()`;
 }
 
 export function Bookmarklet() {

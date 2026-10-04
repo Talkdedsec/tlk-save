@@ -7,6 +7,7 @@ mod jobs;
 mod limit;
 mod proctree;
 mod routes;
+mod thumbs;
 mod urls;
 mod ytdlp;
 
@@ -54,6 +55,7 @@ async fn main() -> std::io::Result<()> {
         jobs,
         limiter: RateLimiter::default(),
         cache: Cache::new(Duration::from_secs(300), 512),
+        thumbs: thumbs::Thumbs::new(),
     });
 
     if cfg.update_hours > 0 {
