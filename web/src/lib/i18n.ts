@@ -1,158 +1,8 @@
 import { createContext, useContext } from "react";
 
-export type Locale = "tr" | "en";
+export type Locale = "en" | "tr";
 
-const tr = {
-  "meta.title": "tlk-save — video indirici",
-
-  "nav.github": "GitHub'da kaynak kodu",
-  "nav.theme": "Tema",
-  "nav.theme.system": "Sistem",
-  "nav.theme.light": "Açık",
-  "nav.theme.dark": "Koyu",
-  "nav.language": "Dil",
-
-  "hero.eyebrow": "Reklamsız · Kayıtsız · Açık kaynak",
-  "hero.title.a": "Her videoyu",
-  "hero.title.b": "tek linkle indir.",
-  "hero.lead": "YouTube, TikTok, Instagram, X ve 1800'den fazla site. Linki yapıştır, kaliteyi seç, bitti.",
-
-  "form.label": "Video linki",
-  "form.placeholder": "Linki buraya yapıştır…",
-  "form.paste": "Yapıştır",
-  "form.clear": "Temizle",
-  "form.submit": "Getir",
-  "form.loading": "Bakılıyor…",
-  "form.hint": "İpucu: sayfanın herhangi bir yerinde {key} ile yapıştırabilirsin.",
-  "form.detected": "{name} linki",
-
-  "strip.more": "+1800 site",
-  "strip.label": "Desteklenen siteler",
-
-  "result.by": "{name}",
-  "result.video": "Video",
-  "result.audio": "Ses",
-  "result.best": "En iyi",
-  "result.size.unknown": "boyut bilinmiyor",
-  "result.too_large": "Sunucu sınırını aşıyor",
-  "result.mp3.note": "Kapak görseli ve etiketlerle",
-  "result.m4a.note": "Kayıpsız, orijinal ses",
-  "result.download": "{label} indir",
-  "result.open": "Kaynakta aç",
-  "result.close": "Kapat",
-  "result.subtitle": "Altyazı",
-  "result.image": "Kapak",
-  "result.sub.auto": "otomatik",
-  "result.sub.note": "SRT altyazı",
-  "result.image.label": "Kapak görseli",
-  "result.image.note": "En yüksek çözünürlük, JPG",
-  "result.empty": "Bu videoda bu türde bir seçenek yok.",
-
-  "clip.toggle": "Sadece bir bölümünü indir",
-  "clip.start": "Başlangıç",
-  "clip.end": "Bitiş",
-  "clip.hint": "dk:sn olarak yaz, örneğin 1:30. Video süresi {duration}.",
-  "clip.invalid": "Bitiş, başlangıçtan en az 1 saniye sonra ve video süresi içinde olmalı.",
-  "clip.length": "{length} uzunluğunda klip",
-
-  "job.queued": "Sırada bekliyor…",
-  "job.starting": "Başlatılıyor…",
-  "job.downloading": "İndiriliyor",
-  "job.processing": "Son dokunuşlar yapılıyor…",
-  "job.processing.video": "Görüntü ve ses birleştiriliyor…",
-  "job.processing.audio": "Ses dönüştürülüyor…",
-  "job.ready": "Hazır",
-  "job.saved": "İndirme başladı. Başlamadıysa {link}.",
-  "job.saved.link": "buraya tıkla",
-  "job.expires": "Dosya {time} sunucudan silinir.",
-  "job.cancel": "İptal",
-  "job.again": "Başka bir kalite seç",
-  "job.retry": "Tekrar dene",
-  "job.left": "{eta} kaldı",
-
-  "history.title": "Son indirilenler",
-  "history.clear": "Temizle",
-  "history.empty": "Bu cihazda indirdiklerin burada görünür. Sadece senin tarayıcında saklanır.",
-
-  "features.title": "Neden tlk-save?",
-  "features.private.title": "Reklam yok, iz yok",
-  "features.private.body": "Hesap, çerez, analiz scripti ya da açılır pencere yok. Dosyan 30 dakika sonra sunucudan silinir.",
-  "features.quality.title": "Gerçek en yüksek kalite",
-  "features.quality.body": "4K, 60 fps ve HDR, sitede ne varsa o. Her oynatıcıda açılan MP4 olarak birleştirilir.",
-  "features.audio.title": "Müzik için MP3",
-  "features.audio.body": "Kapak görseli, başlık ve sanatçı bilgisi dosyanın içine gömülü olarak gelir.",
-  "features.anywhere.title": "Her yerden",
-  "features.anywhere.body": "Telefonda Paylaş menüsünden, bilgisayarda yer imi butonundan tek dokunuş.",
-
-  "bookmarklet.title": "Tek tıkla indir",
-  "bookmarklet.body": "Bu butonu yer imleri çubuğuna sürükle. İzlediğin videonun sayfasında tıklayınca tlk-save o linkle açılır.",
-  "bookmarklet.button": "tlk-save ile indir",
-  "bookmarklet.drag": "Sürükle",
-  "bookmarklet.share": "Telefonda: tlk-save'i ana ekrana ekle, sonra videonun Paylaş menüsünden seç.",
-
-  "faq.title": "Sık sorulanlar",
-  "faq.how.q": "Nasıl çalışıyor?",
-  "faq.how.a": "Linki yapıştırdığında sunucumuz videoyu açık kaynak yt-dlp ile bulur ve indirir, sonra dosyayı sana gönderir. Tarayıcın bu sitelerden doğrudan video çekemediği için arada bir sunucu gerekiyor.",
-  "faq.stored.q": "Dosyalarım saklanıyor mu?",
-  "faq.stored.a": "Hayır. Hazırlanan dosya 30 dakika sonra kendiliğinden silinir. Linkler ya da ne indirdiğin kaydedilmez. 'Son indirilenler' listesi sadece senin tarayıcında durur.",
-  "faq.sites.q": "Hangi siteler destekleniyor?",
-  "faq.sites.a": "yt-dlp'nin desteklediği 1800'den fazla site: YouTube, TikTok, Instagram, X, Facebook, Reddit, Twitch, SoundCloud, Vimeo ve daha fazlası. Motor her gün güncelleniyor.",
-  "faq.login.q": "Bazı Instagram ya da Facebook videoları neden inmiyor?",
-  "faq.login.a": "Bu siteler bazı içerikleri giriş yapmadan vermiyor. Gizli hesaplardaki içerik de indirilemez. Herkese açık gönderiler çoğunlukla sorunsuz iner.",
-  "faq.legal.q": "Yasal mı?",
-  "faq.legal.a": "Kendi videolarını, izin verilmiş ya da telif hakkı olmayan içeriği indirmek için kullan. Başkasının eserini izinsiz yaymak senin sorumluluğundadır.",
-  "faq.self.q": "Kendi sunucumda çalıştırabilir miyim?",
-  "faq.self.a": "Evet. Sunucu tek bir Rust programı ve kaynak kodu açık. Kurduktan sonra bu sayfanın altındaki 'Sunucu' bağlantısından adresini girmen yeterli.",
-
-  "footer.made": "Açık kaynak, MIT lisanslı.",
-  "footer.engine": "Motor: yt-dlp",
-  "footer.server": "Sunucu",
-  "footer.status.online": "Çevrimiçi",
-  "footer.status.offline": "Ulaşılamıyor",
-  "footer.status.checking": "Kontrol ediliyor",
-
-  "server.title": "Sunucu ayarı",
-  "server.body": "Varsayılan sunucu yerine kendi kurduğun bir tlk-save sunucusunu kullanabilirsin. Örneğin bilgisayarında çalışan http://127.0.0.1:8787.",
-  "server.label": "Sunucu adresi",
-  "server.test": "Dene",
-  "server.save": "Kaydet",
-  "server.reset": "Varsayılana dön",
-  "server.ok": "Bağlandı · yt-dlp {version}",
-  "server.fail": "Bu adreste bir tlk-save sunucusu bulunamadı.",
-  "server.default": "Varsayılan",
-
-  "error.title": "İndirilemedi",
-  "error.no_server": "Bu sayfaya henüz bir sunucu tanımlanmamış. Alttaki 'Sunucu' bağlantısından bir adres gir.",
-  "error.network": "Sunucuya ulaşılamadı. İnternet bağlantını kontrol et ya da biraz sonra tekrar dene.",
-  "error.invalid_url": "Bu bir video linkine benzemiyor. Tarayıcının adres çubuğundaki ya da Paylaş menüsündeki linki yapıştır.",
-  "error.unsupported": "Bu site desteklenmiyor ya da linkte video yok.",
-  "error.playlist": "Bu bir oynatma listesi ya da kanal sayfası. Tek bir videonun linkini yapıştır.",
-  "error.live": "Canlı yayınlar indirilemez. Yayın bittikten sonra tekrar dene.",
-  "error.private": "Bu içerik gizli. Sadece herkese açık içerik indirilebilir.",
-  "error.age_restricted": "Bu içerik yaş sınırlı ve giriş yapılmadan açılmıyor.",
-  "error.login_required": "Bu site içeriği giriş yapmadan vermiyor. Gönderi herkese açıksa birkaç dakika sonra tekrar dene.",
-  "error.geo_blocked": "Bu içerik sunucunun bulunduğu ülkede engellenmiş.",
-  "error.too_long": "Video çok uzun. Bu sunucu {hours} saate kadar olan videoları indiriyor.",
-  "error.too_large": "Dosya bu sunucunun boyut sınırından büyük. Daha düşük bir kalite seç.",
-  "error.upstream_limited": "Site şu an çok fazla istek alıyor. Birkaç dakika sonra tekrar dene.",
-  "error.bot_check": "Site sunucudan doğrulama istedi. Birkaç dakika sonra tekrar dene.",
-  "error.unavailable": "Video bulunamadı. Silinmiş ya da kaldırılmış olabilir.",
-  "error.rate_limited": "Çok hızlı istek gönderildi. Bir dakika bekleyip tekrar dene.",
-  "error.busy": "Aynı anda en fazla iki indirme yapılabilir. Birinin bitmesini bekle.",
-  "error.timeout": "Site çok geç yanıt verdi. Tekrar dene.",
-  "error.engine_missing": "Sunucu şu an hazır değil. Biraz sonra tekrar dene.",
-  "error.not_found": "Bu indirmenin süresi dolmuş. Tekrar başlat.",
-  "error.invalid_option": "Bu kalite artık mevcut değil. Linki yeniden getir.",
-  "error.invalid_section": "Seçilen bölüm geçersiz. Başlangıç ve bitiş zamanlarını kontrol et.",
-  "error.server_full": "Sunucu şu an çok dolu. Birkaç dakika sonra tekrar dene.",
-  "error.cancelled": "İndirme iptal edildi.",
-  "error.failed": "Beklenmeyen bir şey oldu. Tekrar dene. Sorun sürerse GitHub'da bildir.",
-  "error.details": "Teknik ayrıntı",
-} as const;
-
-export type MessageKey = keyof typeof tr;
-
-const en: Record<MessageKey, string> = {
+const en = {
   "meta.title": "tlk-save — video downloader",
 
   "nav.github": "Source code on GitHub",
@@ -298,12 +148,162 @@ const en: Record<MessageKey, string> = {
   "error.cancelled": "Download cancelled.",
   "error.failed": "Something unexpected happened. Try again, and if it keeps happening, report it on GitHub.",
   "error.details": "Technical details",
+} as const;
+
+export type MessageKey = keyof typeof en;
+
+const tr: Record<MessageKey, string> = {
+  "meta.title": "tlk-save — video indirici",
+
+  "nav.github": "GitHub'da kaynak kodu",
+  "nav.theme": "Tema",
+  "nav.theme.system": "Sistem",
+  "nav.theme.light": "Açık",
+  "nav.theme.dark": "Koyu",
+  "nav.language": "Dil",
+
+  "hero.eyebrow": "Reklamsız · Kayıtsız · Açık kaynak",
+  "hero.title.a": "Her videoyu",
+  "hero.title.b": "tek linkle indir.",
+  "hero.lead": "YouTube, TikTok, Instagram, X ve 1800'den fazla site. Linki yapıştır, kaliteyi seç, bitti.",
+
+  "form.label": "Video linki",
+  "form.placeholder": "Linki buraya yapıştır…",
+  "form.paste": "Yapıştır",
+  "form.clear": "Temizle",
+  "form.submit": "Getir",
+  "form.loading": "Bakılıyor…",
+  "form.hint": "İpucu: sayfanın herhangi bir yerinde {key} ile yapıştırabilirsin.",
+  "form.detected": "{name} linki",
+
+  "strip.more": "+1800 site",
+  "strip.label": "Desteklenen siteler",
+
+  "result.by": "{name}",
+  "result.video": "Video",
+  "result.audio": "Ses",
+  "result.best": "En iyi",
+  "result.size.unknown": "boyut bilinmiyor",
+  "result.too_large": "Sunucu sınırını aşıyor",
+  "result.mp3.note": "Kapak görseli ve etiketlerle",
+  "result.m4a.note": "Kayıpsız, orijinal ses",
+  "result.download": "{label} indir",
+  "result.open": "Kaynakta aç",
+  "result.close": "Kapat",
+  "result.subtitle": "Altyazı",
+  "result.image": "Kapak",
+  "result.sub.auto": "otomatik",
+  "result.sub.note": "SRT altyazı",
+  "result.image.label": "Kapak görseli",
+  "result.image.note": "En yüksek çözünürlük, JPG",
+  "result.empty": "Bu videoda bu türde bir seçenek yok.",
+
+  "clip.toggle": "Sadece bir bölümünü indir",
+  "clip.start": "Başlangıç",
+  "clip.end": "Bitiş",
+  "clip.hint": "dk:sn olarak yaz, örneğin 1:30. Video süresi {duration}.",
+  "clip.invalid": "Bitiş, başlangıçtan en az 1 saniye sonra ve video süresi içinde olmalı.",
+  "clip.length": "{length} uzunluğunda klip",
+
+  "job.queued": "Sırada bekliyor…",
+  "job.starting": "Başlatılıyor…",
+  "job.downloading": "İndiriliyor",
+  "job.processing": "Son dokunuşlar yapılıyor…",
+  "job.processing.video": "Görüntü ve ses birleştiriliyor…",
+  "job.processing.audio": "Ses dönüştürülüyor…",
+  "job.ready": "Hazır",
+  "job.saved": "İndirme başladı. Başlamadıysa {link}.",
+  "job.saved.link": "buraya tıkla",
+  "job.expires": "Dosya {time} sunucudan silinir.",
+  "job.cancel": "İptal",
+  "job.again": "Başka bir kalite seç",
+  "job.retry": "Tekrar dene",
+  "job.left": "{eta} kaldı",
+
+  "history.title": "Son indirilenler",
+  "history.clear": "Temizle",
+  "history.empty": "Bu cihazda indirdiklerin burada görünür. Sadece senin tarayıcında saklanır.",
+
+  "features.title": "Neden tlk-save?",
+  "features.private.title": "Reklam yok, iz yok",
+  "features.private.body": "Hesap, çerez, analiz scripti ya da açılır pencere yok. Dosyan 30 dakika sonra sunucudan silinir.",
+  "features.quality.title": "Gerçek en yüksek kalite",
+  "features.quality.body": "4K, 60 fps ve HDR, sitede ne varsa o. Her oynatıcıda açılan MP4 olarak birleştirilir.",
+  "features.audio.title": "Müzik için MP3",
+  "features.audio.body": "Kapak görseli, başlık ve sanatçı bilgisi dosyanın içine gömülü olarak gelir.",
+  "features.anywhere.title": "Her yerden",
+  "features.anywhere.body": "Telefonda Paylaş menüsünden, bilgisayarda yer imi butonundan tek dokunuş.",
+
+  "bookmarklet.title": "Tek tıkla indir",
+  "bookmarklet.body": "Bu butonu yer imleri çubuğuna sürükle. İzlediğin videonun sayfasında tıklayınca tlk-save o linkle açılır.",
+  "bookmarklet.button": "tlk-save ile indir",
+  "bookmarklet.drag": "Sürükle",
+  "bookmarklet.share": "Telefonda: tlk-save'i ana ekrana ekle, sonra videonun Paylaş menüsünden seç.",
+
+  "faq.title": "Sık sorulanlar",
+  "faq.how.q": "Nasıl çalışıyor?",
+  "faq.how.a": "Linki yapıştırdığında sunucumuz videoyu açık kaynak yt-dlp ile bulur ve indirir, sonra dosyayı sana gönderir. Tarayıcın bu sitelerden doğrudan video çekemediği için arada bir sunucu gerekiyor.",
+  "faq.stored.q": "Dosyalarım saklanıyor mu?",
+  "faq.stored.a": "Hayır. Hazırlanan dosya 30 dakika sonra kendiliğinden silinir. Linkler ya da ne indirdiğin kaydedilmez. 'Son indirilenler' listesi sadece senin tarayıcında durur.",
+  "faq.sites.q": "Hangi siteler destekleniyor?",
+  "faq.sites.a": "yt-dlp'nin desteklediği 1800'den fazla site: YouTube, TikTok, Instagram, X, Facebook, Reddit, Twitch, SoundCloud, Vimeo ve daha fazlası. Motor her gün güncelleniyor.",
+  "faq.login.q": "Bazı Instagram ya da Facebook videoları neden inmiyor?",
+  "faq.login.a": "Bu siteler bazı içerikleri giriş yapmadan vermiyor. Gizli hesaplardaki içerik de indirilemez. Herkese açık gönderiler çoğunlukla sorunsuz iner.",
+  "faq.legal.q": "Yasal mı?",
+  "faq.legal.a": "Kendi videolarını, izin verilmiş ya da telif hakkı olmayan içeriği indirmek için kullan. Başkasının eserini izinsiz yaymak senin sorumluluğundadır.",
+  "faq.self.q": "Kendi sunucumda çalıştırabilir miyim?",
+  "faq.self.a": "Evet. Sunucu tek bir Rust programı ve kaynak kodu açık. Kurduktan sonra bu sayfanın altındaki 'Sunucu' bağlantısından adresini girmen yeterli.",
+
+  "footer.made": "Açık kaynak, MIT lisanslı.",
+  "footer.engine": "Motor: yt-dlp",
+  "footer.server": "Sunucu",
+  "footer.status.online": "Çevrimiçi",
+  "footer.status.offline": "Ulaşılamıyor",
+  "footer.status.checking": "Kontrol ediliyor",
+
+  "server.title": "Sunucu ayarı",
+  "server.body": "Varsayılan sunucu yerine kendi kurduğun bir tlk-save sunucusunu kullanabilirsin. Örneğin bilgisayarında çalışan http://127.0.0.1:8787.",
+  "server.label": "Sunucu adresi",
+  "server.test": "Dene",
+  "server.save": "Kaydet",
+  "server.reset": "Varsayılana dön",
+  "server.ok": "Bağlandı · yt-dlp {version}",
+  "server.fail": "Bu adreste bir tlk-save sunucusu bulunamadı.",
+  "server.default": "Varsayılan",
+
+  "error.title": "İndirilemedi",
+  "error.no_server": "Bu sayfaya henüz bir sunucu tanımlanmamış. Alttaki 'Sunucu' bağlantısından bir adres gir.",
+  "error.network": "Sunucuya ulaşılamadı. İnternet bağlantını kontrol et ya da biraz sonra tekrar dene.",
+  "error.invalid_url": "Bu bir video linkine benzemiyor. Tarayıcının adres çubuğundaki ya da Paylaş menüsündeki linki yapıştır.",
+  "error.unsupported": "Bu site desteklenmiyor ya da linkte video yok.",
+  "error.playlist": "Bu bir oynatma listesi ya da kanal sayfası. Tek bir videonun linkini yapıştır.",
+  "error.live": "Canlı yayınlar indirilemez. Yayın bittikten sonra tekrar dene.",
+  "error.private": "Bu içerik gizli. Sadece herkese açık içerik indirilebilir.",
+  "error.age_restricted": "Bu içerik yaş sınırlı ve giriş yapılmadan açılmıyor.",
+  "error.login_required": "Bu site içeriği giriş yapmadan vermiyor. Gönderi herkese açıksa birkaç dakika sonra tekrar dene.",
+  "error.geo_blocked": "Bu içerik sunucunun bulunduğu ülkede engellenmiş.",
+  "error.too_long": "Video çok uzun. Bu sunucu {hours} saate kadar olan videoları indiriyor.",
+  "error.too_large": "Dosya bu sunucunun boyut sınırından büyük. Daha düşük bir kalite seç.",
+  "error.upstream_limited": "Site şu an çok fazla istek alıyor. Birkaç dakika sonra tekrar dene.",
+  "error.bot_check": "Site sunucudan doğrulama istedi. Birkaç dakika sonra tekrar dene.",
+  "error.unavailable": "Video bulunamadı. Silinmiş ya da kaldırılmış olabilir.",
+  "error.rate_limited": "Çok hızlı istek gönderildi. Bir dakika bekleyip tekrar dene.",
+  "error.busy": "Aynı anda en fazla iki indirme yapılabilir. Birinin bitmesini bekle.",
+  "error.timeout": "Site çok geç yanıt verdi. Tekrar dene.",
+  "error.engine_missing": "Sunucu şu an hazır değil. Biraz sonra tekrar dene.",
+  "error.not_found": "Bu indirmenin süresi dolmuş. Tekrar başlat.",
+  "error.invalid_option": "Bu kalite artık mevcut değil. Linki yeniden getir.",
+  "error.invalid_section": "Seçilen bölüm geçersiz. Başlangıç ve bitiş zamanlarını kontrol et.",
+  "error.server_full": "Sunucu şu an çok dolu. Birkaç dakika sonra tekrar dene.",
+  "error.cancelled": "İndirme iptal edildi.",
+  "error.failed": "Beklenmeyen bir şey oldu. Tekrar dene. Sorun sürerse GitHub'da bildir.",
+  "error.details": "Teknik ayrıntı",
 };
 
-export const MESSAGES: Record<Locale, Record<MessageKey, string>> = { tr, en };
+export const MESSAGES: Record<Locale, Record<MessageKey, string>> = { en, tr };
 
 export function translate(locale: Locale, key: MessageKey, vars?: Record<string, string | number>): string {
-  const template = MESSAGES[locale][key] ?? MESSAGES.tr[key] ?? key;
+  const template = MESSAGES[locale][key] ?? MESSAGES.en[key] ?? key;
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) =>
     name in vars ? String(vars[name]) : match,
@@ -312,12 +312,13 @@ export function translate(locale: Locale, key: MessageKey, vars?: Record<string,
 
 export function errorKey(code: string): MessageKey {
   const key = `error.${code}` as MessageKey;
-  return key in tr ? key : "error.failed";
+  return key in en ? key : "error.failed";
 }
 
+/** The language index.html settled on before React started (saved choice, else the browser's). */
 export function initialLocale(): Locale {
-  const lang = typeof document === "undefined" ? "tr" : document.documentElement.lang;
-  return lang === "en" ? "en" : "tr";
+  const lang = typeof document === "undefined" ? "en" : document.documentElement.lang;
+  return lang === "tr" ? "tr" : "en";
 }
 
 export interface I18n {
@@ -327,8 +328,8 @@ export interface I18n {
 }
 
 export const I18nContext = createContext<I18n>({
-  locale: "tr",
-  t: (key, vars) => translate("tr", key, vars),
+  locale: "en",
+  t: (key, vars) => translate("en", key, vars),
   setLocale: () => {},
 });
 

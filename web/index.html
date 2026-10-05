@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>tlk-save — video indirici</title>
-    <meta name="description" content="YouTube, TikTok, Instagram, X ve 1800'den fazla siteden video ve ses indir. Reklam yok, kayıt yok, takip yok." />
+    <title>tlk-save — video downloader</title>
+    <meta name="description" content="Download video and audio from YouTube, TikTok, Instagram, X and more than 1800 other sites. No ads, no sign-up, no tracking." />
     <meta name="color-scheme" content="dark light" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
@@ -14,8 +14,10 @@
     <link rel="manifest" href="./manifest.webmanifest" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="tlk-save — video indirici" />
-    <meta property="og:description" content="Linki yapıştır, indir. YouTube, TikTok, Instagram, X ve 1800+ site. Reklamsız." />
+    <meta property="og:title" content="tlk-save — video downloader" />
+    <meta property="og:description" content="Paste a link, download. YouTube, TikTok, Instagram, X and 1800+ sites. No ads." />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="tr_TR" />
     <meta property="og:url" content="https://talkdedsec.github.io/tlk-save/" />
     <meta property="og:image" content="https://talkdedsec.github.io/tlk-save/social.png" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -28,7 +30,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
         var l = localStorage.getItem("tlk-save:locale");
         if (l === "en" || l === "tr") document.documentElement.lang = l;
-        else if (!/^tr\b/i.test(navigator.language || "")) document.documentElement.lang = "en";
+        else if (/^tr\b/i.test(navigator.language || "")) document.documentElement.lang = "tr";
       } catch (e) {}
     </script>
   </head>

@@ -17,7 +17,7 @@ YouTube, TikTok, Instagram, X ve 1800'den fazla siteden video ve ses indir. Link
 - **Klip, altyazı, kapak**: Videonun sadece bir bölümünü, altyazısını SRT olarak ya da kapak görselini tam çözünürlükte indirebilirsin.
 - **Her yerden**: Telefonda doğrudan Paylaş menüsünden (sayfayı ana ekrana ekle), bilgisayarda tek tıklık yer imi butonuyla.
 - **Gizli**: Dosyalar hazır olduktan 30 dakika sonra sunucudan silinir. Ne indirdiğin kaydedilmez. Son indirilenler listesi sadece senin tarayıcında durur.
-- Türkçe ve İngilizce, açık ve koyu tema, her ekran boyutunda çalışır.
+- İngilizce ve Türkçe (tarayıcının dilinde açılır, seçimini hatırlar), açık ve koyu tema, her ekran boyutunda çalışır.
 
 ## Nasıl çalışıyor
 

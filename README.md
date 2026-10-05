@@ -17,7 +17,7 @@ Download videos and audio from YouTube, TikTok, Instagram, X and more than 1800 
 - **Clips, subtitles, covers**: download just a part of a video, its subtitles as SRT, or its cover image in full resolution.
 - **From anywhere**: share straight from a phone (install the page to the home screen), or use the one-click bookmark on a computer.
 - **Private**: files are deleted from the server 30 minutes after they are ready; nothing about what you download is logged. Recent downloads are kept in your browser only.
-- Turkish and English, light and dark theme, works on any screen size.
+- English and Turkish (opens in your browser's language and remembers your pick), light and dark theme, works on any screen size.
 
 ## How it works
 
