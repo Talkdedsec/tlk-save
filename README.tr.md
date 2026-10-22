@@ -79,3 +79,7 @@ Kendi videolarını, izin aldığın ya da telif hakkı olmayan içeriği indir.
 ## Lisans
 
 [MIT](LICENSE). yt-dlp Unlicense ile yayınlanıyor. Kurulum scriptlerinin kullandığı ffmpeg derlemeleri GPL lisanslı.
+
+<p align="center">
+  <sub><a href="https://talkdedsec.com">Talkdedsec</a> tarafından yapıldı</sub>
+</p>

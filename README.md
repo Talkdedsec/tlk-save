@@ -110,3 +110,7 @@ Download your own videos, content you have permission for, or content without co
 ## License
 
 [MIT](LICENSE). yt-dlp is released under the Unlicense; ffmpeg builds used by the installers are GPL.
+
+<p align="center">
+  <sub>Built by <a href="https://talkdedsec.com">Talkdedsec</a></sub>
+</p>
