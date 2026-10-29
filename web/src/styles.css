@@ -1828,3 +1828,23 @@ section + section {
     padding: 0 8px;
   }
 }
+
+/* Said before the visitor wastes a paste: the default server did not answer its health check. */
+.server-offline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px auto 0;
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.server-offline span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5484d;
+  flex: none;
+}

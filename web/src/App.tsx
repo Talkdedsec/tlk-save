@@ -211,6 +211,13 @@ export function App() {
               inputRef={inputRef}
             />
 
+            {status === "offline" && lookup.phase === "idle" ? (
+              <p className="server-offline" role="status">
+                <span aria-hidden="true" />
+                {t("hero.offline")}
+              </p>
+            ) : null}
+
             {lookup.phase === "idle" || lookup.phase === "failed" ? <PlatformStrip /> : null}
 
             <div ref={resultRef} style={{ scrollMarginTop: 16 }}>
@@ -220,7 +227,8 @@ export function App() {
               ) : null}
               {lookup.phase === "failed" ? (
                 <Notice
-                  code={lookup.code}
+                  // a failed health check means the server is down, not the visitor's connection
+                  code={lookup.code === "network" && status === "offline" ? "server_offline" : lookup.code}
                   detail={lookup.detail}
                   vars={{ hours: maxHours }}
                   onRetry={lookup.code === "invalid_url" ? undefined : () => void submit(lookup.url)}
